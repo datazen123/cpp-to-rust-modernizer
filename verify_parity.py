@@ -22,6 +22,13 @@ portfolio. Three independent checks, all required to pass:
    the C bug would defeat the entire point of this migration, so this is a
    hard gate, not a suggestion.
 
+Plus one reported-but-non-blocking check: real `clippy` (Rust's own
+standard linter, run via `clippy-driver` directly since this repo compiles
+single files with `rustc`, not a full `cargo` crate) against the generated
+Rust. Style/idiom warnings don't indicate a memory-safety problem, so they
+don't gate verification the way the three checks above do - they're
+surfaced honestly in the result either way, not swept under the rug.
+
 Run standalone:
     python verify_parity.py
 (requires legacy/asset_risk.c and modernized/asset_risk.rs to both exist -
@@ -33,6 +40,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -41,8 +49,16 @@ MODERN_RS = ROOT / "modernized" / "asset_risk.rs"
 VALID_INPUT = ROOT / "data" / "sample_assets.txt"
 ADVERSARIAL_INPUT = ROOT / "data" / "adversarial_overflow_input.txt"
 
-LEGACY_BIN = Path("/tmp/cpp_to_rust_legacy_bin")
-MODERN_BIN = Path("/tmp/cpp_to_rust_modern_bin")
+# A fresh, securely-created (mode 0700) temp directory per run - not a
+# fixed, predictable /tmp path. On a shared multi-user machine, a
+# hardcoded /tmp filename is a symlink/race-condition risk (a real,
+# bandit-flagged finding on an earlier version of this file); mkdtemp()
+# avoids that class of issue entirely rather than just moving the
+# hardcoded name around.
+_TMPDIR = Path(tempfile.mkdtemp(prefix="cpp_to_rust_verify_"))
+LEGACY_BIN = _TMPDIR / "legacy_bin"
+MODERN_BIN = _TMPDIR / "modern_bin"
+CLIPPY_META_OUT = _TMPDIR / "clippy_meta.rmeta"
 
 FIELDS = ["id", "days_since_check", "is_overdue", "risk"]
 UNSAFE_RE = re.compile(r"\bunsafe\b")
@@ -157,9 +173,33 @@ def check_no_unsafe_blocks(rust_source: str) -> dict:
     return {"ok": count == 0, "unsafe_keyword_count": count}
 
 
+def check_clippy(rust_path: Path = MODERN_RS) -> dict:
+    """Runs real `clippy` (via `clippy-driver` directly, since this repo
+    compiles single files with `rustc` rather than a full `cargo` crate)
+    against the generated Rust and reports every warning verbatim.
+    Non-blocking by design: style/idiom lints aren't a memory-safety
+    signal, so they're surfaced honestly rather than silently gating
+    verification the way the unsafe-block/parity/safety checks do."""
+    # nosec B603 - shell=False (the default) with a static argv list is the
+    # SAFE subprocess pattern bandit itself recommends; this finding is a
+    # known low-value one for any subprocess.run() call, not a real risk
+    # here (no shell interpolation, no untrusted string concatenation).
+    result = subprocess.run(  # nosec B603
+        ["clippy-driver", "--edition", "2021", "--emit=metadata",
+         "-o", str(CLIPPY_META_OUT), str(rust_path)],
+        capture_output=True, text=True, timeout=60,
+    )
+    # clippy's own trailing "N warnings emitted" summary line also starts
+    # with "warning:" - excluded here so it isn't double-counted as an
+    # individual finding on top of the ones it's summarizing.
+    warning_lines = re.findall(r"^warning: (?!\d+ warnings? emitted).*$", result.stderr, re.MULTILINE)
+    return {"ran": True, "warning_count": len(warning_lines), "output": result.stderr}
+
+
 def run_full_verification(rust_path: Path = MODERN_RS) -> dict:
     """Runs everything: compile both, the unsafe-block check, standard
-    parity, and the memory-safety proof. Returns one combined result dict."""
+    parity, the memory-safety proof, and clippy (reported, non-blocking).
+    Returns one combined result dict."""
     ok, err = compile_legacy()
     if not ok:
         return {"ok": False, "stage": "compile_legacy", "error": err}
@@ -171,6 +211,7 @@ def run_full_verification(rust_path: Path = MODERN_RS) -> dict:
     unsafe_check = check_no_unsafe_blocks(rust_path.read_text())
     parity = check_standard_parity()
     safety = check_memory_safety_proof()
+    clippy = check_clippy(rust_path)
 
     overall_ok = unsafe_check["ok"] and parity.get("ok", False) and safety["ok"]
     return {
@@ -178,6 +219,7 @@ def run_full_verification(rust_path: Path = MODERN_RS) -> dict:
         "stage": "verification",
         "unsafe_check": unsafe_check,
         "parity": parity,
+        "clippy": clippy,
         "safety_proof": safety,
     }
 

@@ -1,0 +1,30 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: verify toolchains (clang, rustc, clippy-driver all needed by the verifier)
+        run: |
+          clang --version
+          rustc --version
+          clippy-driver --version
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+      - name: bandit (reported, non-blocking on low-severity findings)
+        run: |
+          bandit -r . -x "./.venv,./test_modernize.py,./test_verify_parity.py,./test_verify_parity_properties.py,./test_benchmark.py" \
+            --severity-level medium

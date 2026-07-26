@@ -11,6 +11,11 @@
     "legacy_count": 8,
     "modern_count": 8
   },
+  "clippy": {
+    "ran": true,
+    "warning_count": 0,
+    "output": ""
+  },
   "safety_proof": {
     "ok": true,
     "legacy_asan_triggered": true,

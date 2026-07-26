@@ -11,3 +11,4 @@ target/
 Cargo.lock
 .pytest_cache/
 .DS_Store
+.hypothesis/

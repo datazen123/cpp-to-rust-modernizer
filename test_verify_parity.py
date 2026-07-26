@@ -58,3 +58,44 @@ def test_check_no_unsafe_blocks_does_not_false_positive_on_substring():
     standalone word should not be flagged."""
     result = vp.check_no_unsafe_blocks("// thread_unsafe_counter is a bad name for a variable")
     assert result["ok"] is True
+
+
+# --- check_clippy: real clippy-driver run, requires clippy on PATH ---
+
+def test_check_clippy_reports_zero_warnings_on_clean_code(tmp_path):
+    rust_file = tmp_path / "clean.rs"
+    rust_file.write_text("fn main() { println!(\"hello\"); }\n")
+    result = vp.check_clippy(rust_file)
+    assert result["ran"] is True
+    assert result["warning_count"] == 0
+
+
+def test_check_clippy_detects_a_real_lint_warning(tmp_path):
+    """A well-known clippy lint (manual_unwrap_or) - the exact pattern
+    Claude's own generated code triggered on the live run documented in
+    the README."""
+    rust_file = tmp_path / "lint_me.rs"
+    rust_file.write_text(
+        "fn main() {\n"
+        "    let x: Result<i32, ()> = Ok(1);\n"
+        "    let _y = match x { Ok(n) => n, Err(_) => 0 };\n"
+        "}\n"
+    )
+    result = vp.check_clippy(rust_file)
+    assert result["ran"] is True
+    assert result["warning_count"] >= 1
+
+
+def test_check_clippy_excludes_the_summary_line_from_the_count(tmp_path):
+    """clippy's own 'N warnings emitted' trailing summary line also starts
+    with 'warning:' - it must not be double-counted as an extra finding."""
+    rust_file = tmp_path / "lint_me.rs"
+    rust_file.write_text(
+        "fn main() {\n"
+        "    let x: Result<i32, ()> = Ok(1);\n"
+        "    let _y = match x { Ok(n) => n, Err(_) => 0 };\n"
+        "}\n"
+    )
+    result = vp.check_clippy(rust_file)
+    assert "warning emitted" in result["output"] or "warnings emitted" in result["output"]
+    assert result["warning_count"] == 1

@@ -1,125 +1,100 @@
 use std::io::{self, BufRead};
 
-#[derive(Debug, Clone)]
-enum RiskLevel {
-    High,
-    Medium,
-    Low,
-}
-
-impl RiskLevel {
-    fn rank(&self) -> u8 {
-        match self {
-            RiskLevel::High => 0,
-            RiskLevel::Medium => 1,
-            RiskLevel::Low => 2,
-        }
-    }
-
-    fn as_str(&self) -> &str {
-        match self {
-            RiskLevel::High => "high",
-            RiskLevel::Medium => "medium",
-            RiskLevel::Low => "low",
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Clone)]
 struct RiskResult {
     id: String,
     days_since_check: i32,
     is_overdue: bool,
-    risk: RiskLevel,
+    risk: String,
 }
 
 fn notes_mention_failure(condition_notes: &str) -> bool {
     condition_notes.to_lowercase().contains("fail")
 }
 
-fn compute_risk(
-    id: String,
-    days_since_check: i32,
-    check_interval_days: i32,
-    condition_notes: &str,
-) -> RiskResult {
+fn compute_risk(days_since_check: i32, check_interval_days: i32, condition_notes: &str) -> RiskResult {
     let is_overdue = days_since_check > check_interval_days;
-
+    
     let ratio = days_since_check as f64 / check_interval_days as f64;
-
-    let risk = if ratio >= 2.0 {
-        RiskLevel::High
+    let mut risk = if ratio >= 2.0 {
+        String::from("high")
     } else if ratio >= 1.0 {
-        RiskLevel::Medium
+        String::from("medium")
     } else {
-        RiskLevel::Low
+        String::from("low")
     };
-
-    let risk = if notes_mention_failure(condition_notes) {
-        RiskLevel::High
-    } else {
-        risk
-    };
-
+    
+    if notes_mention_failure(condition_notes) {
+        risk = String::from("high");
+    }
+    
     RiskResult {
-        id,
+        id: String::new(),
         days_since_check,
         is_overdue,
         risk,
     }
 }
 
+fn risk_rank(risk: &str) -> u8 {
+    match risk {
+        "high" => 0,
+        "medium" => 1,
+        _ => 2,
+    }
+}
+
 fn main() {
     let stdin = io::stdin();
     let mut results = Vec::new();
-
+    
     for line in stdin.lock().lines() {
         let line = match line {
             Ok(l) => l,
             Err(_) => continue,
         };
-
+        
         if line.is_empty() {
             continue;
         }
-
+        
         let fields: Vec<&str> = line.split('|').collect();
-
         if fields.len() < 3 {
             continue;
         }
-
-        let id = fields[0].to_string();
-
-        let days_since_check = match fields[1].parse::<i32>() {
-            Ok(n) => n,
-            Err(_) => 0,
-        };
-
-        let check_interval_days = match fields[2].parse::<i32>() {
-            Ok(n) => n,
-            Err(_) => 0,
-        };
-
-        let condition_notes = if fields.len() > 3 {
-            fields[3..].join("|")
+        
+        let id = fields[0];
+        let days_str = fields[1];
+        let interval_str = fields[2];
+        let notes = if fields.len() > 3 {
+            fields[3]
         } else {
-            String::new()
+            ""
         };
-
-        let result = compute_risk(id, days_since_check, check_interval_days, &condition_notes);
+        
+        let days_since_check = match days_str.parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        
+        let check_interval_days = match interval_str.parse::<i32>() {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        
+        let mut result = compute_risk(days_since_check, check_interval_days, notes);
+        result.id = id.to_string();
         results.push(result);
     }
-
-    results.sort_by_key(|r| r.risk.rank());
-
+    
+    results.sort_by_key(|r| risk_rank(&r.risk));
+    
     for result in results {
-        println!(
-            "{}|{}|{}|{}",
-            result.id,
-            result.days_since_check,
+        println!("{}|{}|{}|{}", 
+            result.id, 
+            result.days_since_check, 
             if result.is_overdue { 1 } else { 0 },
-            result.risk.as_str()
+            result.risk
         );
     }
 }

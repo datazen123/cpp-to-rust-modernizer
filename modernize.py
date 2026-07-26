@@ -185,6 +185,10 @@ def main() -> None:
               f"'{verification['stage']}'. modernized/asset_risk.rs is NOT verified - do not ship it "
               f"without human review. Full detail in modernized/verification_result.json.")
 
+    clippy = verification.get("clippy", {})
+    if clippy.get("ran"):
+        print(f"  clippy (non-blocking): {clippy['warning_count']} warning(s) - see modernized/verification_result.json")
+
     print(f"\nWrote modernized/analysis.json, modernized/asset_risk.rs, modernized/verification_result.json")
     print(f"Verification status: {'VERIFIED' if verified else 'NOT VERIFIED - needs human review'}")
 
