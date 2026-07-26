@@ -1,0 +1,8 @@
+GEN-014|5|30|
+HVAC-002|12|14|minor noise
+VEH-221|40|30|
+GEN-009|3|10|fuel line ok
+COMMS-118|1|7|
+VEH-104|20|14|minor fail flag
+HVAC-011|9|30|
+GEN-002|60|30|

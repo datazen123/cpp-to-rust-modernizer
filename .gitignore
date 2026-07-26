@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv/
+target/
+*.o
+*.out
+Cargo.lock
+.pytest_cache/
+.DS_Store

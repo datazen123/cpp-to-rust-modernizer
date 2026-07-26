@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "stage": "verification",
+  "unsafe_check": {
+    "ok": true,
+    "unsafe_keyword_count": 0
+  },
+  "parity": {
+    "ok": true,
+    "field_mismatches": [],
+    "legacy_count": 8,
+    "modern_count": 8
+  },
+  "safety_proof": {
+    "ok": true,
+    "legacy_asan_triggered": true,
+    "legacy_exit_code": -6,
+    "legacy_asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314",
+    "modern_crashed": false,
+    "modern_exit_code": 0,
+    "modern_stderr": null,
+    "modern_output": "VEH-999|20|1|medium"
+  }
+}
