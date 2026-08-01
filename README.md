@@ -13,6 +13,24 @@ system. The bug itself is real, though - not a toy example. (For the full
 technical detail - the exact function, line, and vulnerability class - see
 "The real bug" below.)
 
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [The real bug](#the-real-bug)
+- [Architecture](#architecture)
+- [Rust practices, grounded in real sources](#rust-practices-grounded-in-real-sources)
+- [Live result](#live-result)
+- [Static analysis](#static-analysis)
+- [Finding the bug two ways](#finding-the-bug-two-ways)
+- [Real-data benchmark](#real-data-benchmark)
+- [Modernization benchmark: six real NIST variants](#modernization-benchmark-six-real-nist-variants)
+- [Deployment path](#deployment-path)
+- [Prerequisites](#prerequisites)
+- [Running it](#running-it)
+- [Troubleshooting](#troubleshooting)
+- [Tests + CI](#tests--ci)
+- [Security notes](#security-notes)
+
 ## Why this exists
 
 This repo follows the same architecture as this portfolio's other
