@@ -266,13 +266,17 @@ via a direct-to-Anthropic API call - whatever model/gateway that program
 actually uses internally is not publicly disclosed in the award data this
 repo cites.
 
+## Prerequisites
+
+Python 3.9 or newer (`python3 --version`), plus `clang` (or `gcc`),
+`rustc`, and `clippy-driver` on `PATH`. `clippy-driver` ships with
+`rustup`'s `clippy` component (`rustup component add clippy`).
+
 ## Running it
 
-Requires `clang` (or `gcc`), `rustc`, and `clippy-driver` on `PATH`, in
-addition to Python. `clippy-driver` ships with `rustup`'s `clippy`
-component (`rustup component add clippy`).
-
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # fill in your own ANTHROPIC_API_KEY
 export $(grep -v '^#' .env | xargs)
@@ -280,6 +284,29 @@ python modernize.py
 # or, once modernized/asset_risk.rs exists, re-run verification alone:
 python verify_parity.py
 ```
+
+The `python3 -m venv` step matters, not just good practice: on macOS,
+plain `pip install` can silently resolve to a leftover Python 2.7
+install instead of Python 3 - see Troubleshooting below.
+
+## Troubleshooting
+
+**`ERROR: Could not find a version that satisfies the requirement
+anthropic<1.0.0,>=0.40.0 ... (from versions: none)`, alongside a "Python
+2.7 reached end of life" warning:**
+
+Your `pip` command is resolving to a Python 2.7 installation, not Python
+3 - common on macOS, where an old Python 2.7 framework install can sit
+earlier on `PATH` than Python 3. The `anthropic` package doesn't publish
+anything for Python 2 at all, hence "no versions: none" - it's not a
+network or permissions problem.
+
+Fix: create and activate a virtual environment first, exactly as shown
+above (`python3 -m venv .venv && source .venv/bin/activate`), then run
+`pip install` again inside it. If you'd rather not use a venv, run
+`python3 -m pip install -r requirements.txt` instead of bare `pip
+install` - that forces the install through Python 3's own pip regardless
+of what `pip` alone resolves to on your system.
 
 ## Tests + CI
 
