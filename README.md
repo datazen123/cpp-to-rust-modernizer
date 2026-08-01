@@ -246,6 +246,49 @@ precision/recall number.
 python benchmark.py
 ```
 
+## Modernization benchmark: six real NIST variants
+
+`benchmark.py` above only tests analysis on one file. `benchmark_modernization.py`
+tests the full pipeline - analyze, generate Rust, verify - against **six**
+real NIST Juliet Test Suite files, all the same underlying bug
+(`CWE121_Stack_Based_Buffer_Overflow__CWE193_char_declare_cpy` - a fixed
+10-byte stack buffer with no room for the NUL terminator on a
+10-character `strcpy`), each wrapped in a different NIST-labeled control
+or data-flow shape:
+
+| Variant | NIST's "Flow Variant" label |
+|---|---|
+| 01 | Baseline |
+| 02 | Control flow: `if(1)` / `if(0)` |
+| 11 | Control flow: via function calls returning true/false |
+| 18 | Control flow: `goto` statements |
+| 31 | Data flow: a copy of the data within the same function |
+| 44 | Data/control flow: data passed via a function pointer |
+
+This is the actual point of Juliet's flow-variant design: proving the
+pipeline generalizes to the same bug dressed differently in C, rather
+than only working on one file's exact source layout.
+
+For each variant: compile the real `_bad()` function with AddressSanitizer
+and run it (confirms the bug is genuinely triggerable in that variant's
+own source, not assumed); have Claude analyze it; have Claude generate a
+safe Rust replacement; compile that Rust and run it.
+
+**Actual measured result, all six variants:**
+
+| Check | Result |
+|---|---|
+| Real bug confirmed under ASan | 6/6 |
+| `CWE-121` correctly identified | 6/6 |
+| Rust compiled, zero `unsafe`, ran clean | 6/6 |
+
+Full per-variant detail (analysis JSON, ASan output, generated Rust) in
+`benchmark_modernization_result.json`.
+
+```bash
+python benchmark_modernization.py
+```
+
 ## Deployment path
 
 This demo calls the Anthropic API directly. A production version for a
@@ -314,7 +357,9 @@ of what `pip` alone resolves to on your system.
 `clang`/`rustc`/`clippy-driver` runs where relevant. `test_modernize.py`
 covers JSON/fence handling and every branch of the correction-prompt
 builder (compile error, unsafe block, parity mismatch, safety-proof
-failure). `test_benchmark.py` covers the CWE-matching logic.
+failure). `test_benchmark.py` covers the CWE-matching logic;
+`test_benchmark_modernization.py` covers the six-variant URL construction
+and the Rust-generation requirements text.
 `test_verify_parity_properties.py` adds Hypothesis property-based tests -
 round-trip parsing across hundreds of generated ticket-shaped inputs,
 "never crashes on arbitrary text," and word-boundary correctness for the

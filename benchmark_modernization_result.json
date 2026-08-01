@@ -1,0 +1,136 @@
+{
+  "01": {
+    "description": "Baseline",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-120",
+      "CWE-121"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  },
+  "02": {
+    "description": "Control flow: if(1) / if(0)",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-120",
+      "CWE-121",
+      "CWE-193"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  },
+  "11": {
+    "description": "Control flow: via function calls returning true/false",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-120",
+      "CWE-121",
+      "CWE-193"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  },
+  "18": {
+    "description": "Control flow: goto statements",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-121",
+      "CWE-193",
+      "CWE-676"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  },
+  "31": {
+    "description": "Data flow: copy of data within the same function",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-121"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  },
+  "44": {
+    "description": "Data/control flow: data passed via a function pointer",
+    "bad_c": {
+      "compiled": true,
+      "crashed": true,
+      "asan_summary": "SUMMARY: AddressSanitizer: stack-buffer-overflow (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x3dbbc) (BuildId: f0a7ac5c49bc3abc851181b6f92b308a32000000200000000100000000000b00) in wrap_strcpy+0x314"
+    },
+    "cwe_identified": true,
+    "cwes_found": [
+      "CWE-121",
+      "CWE-676"
+    ],
+    "rust": {
+      "compiled": true,
+      "unsafe_check": {
+        "ok": true,
+        "unsafe_keyword_count": 0
+      },
+      "ran": true,
+      "stderr": null
+    }
+  }
+}
