@@ -31,6 +31,8 @@ technical detail - the exact function, line, and vulnerability class - see
 - [Tests + CI](#tests--ci)
 - [Security notes](#security-notes)
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Why this exists
 
 This repo follows the same architecture as this portfolio's other
@@ -74,6 +76,8 @@ A few real, checkable data points on how broad this shift already is:
   independently verify) this repo implements at a much smaller scale.
   https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## The real bug
 
 `legacy/asset_risk.c`'s `notes_mention_failure()` copies an operator-
@@ -96,6 +100,8 @@ WRITE of size 95 at ... thread T0
 
 This is a live, reproduced crash, not an assertion - `verify_parity.py`
 re-runs this exact check every time.
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Architecture
 
@@ -134,6 +140,8 @@ legacy/asset_risk.c  (real CWE-121 stack buffer overflow, see above)
 - `verify_parity.py` - the actual proof, callable standalone
   (`python verify_parity.py`) or from `modernize.py`.
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Rust practices, grounded in real sources
 
 The generation prompt in `modernize.py` requires patterns drawn from real,
@@ -166,6 +174,8 @@ established Rust engineering references - not invented house style:
   (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
   treats the unsafe-block count as a hard gate rather than a suggestion.
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Live result
 
 Run end-to-end against the real Anthropic API (`claude-sonnet-4-5`), first
@@ -195,6 +205,8 @@ attempt, no correction pass needed:
   which already provides `.cmp()`). Claude's output style varies run to
   run - this is whatever the most recent run actually produced.
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Static analysis
 
 Beyond the three hard verification gates above, `verify_parity.py` also
@@ -205,6 +217,8 @@ safety checks, clippy findings don't block verification: a style lint
 isn't a memory-safety signal, and gating on it would risk unnecessary
 correction-loop churn over stylistic preference rather than correctness.
 It's surfaced for a human reviewer, not silently discarded.
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Finding the bug two ways
 
@@ -243,6 +257,8 @@ as it does not provide bounding of the memory buffer. [security.insecureAPI.strc
 python fuzz_legacy.py --iterations 2000 --seed 42
 ```
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Real-data benchmark
 
 `benchmark.py` fetches a real file live from **NIST's own Juliet Test Suite
@@ -263,6 +279,8 @@ precision/recall number.
 ```bash
 python benchmark.py
 ```
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Modernization benchmark: six real NIST variants
 
@@ -307,6 +325,8 @@ Full per-variant detail (analysis JSON, ASan output, generated Rust) in
 python benchmark_modernization.py
 ```
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Deployment path
 
 This demo calls the Anthropic API directly. A production version for a
@@ -326,11 +346,15 @@ via a direct-to-Anthropic API call - whatever model/gateway that program
 actually uses internally is not publicly disclosed in the award data this
 repo cites.
 
+[↑ Back to top](#cpp-to-rust-modernizer)
+
 ## Prerequisites
 
 Python 3.9 or newer (`python3 --version`), plus `clang` (or `gcc`),
 `rustc`, and `clippy-driver` on `PATH`. `clippy-driver` ships with
 `rustup`'s `clippy` component (`rustup component add clippy`).
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Running it
 
@@ -348,6 +372,8 @@ python verify_parity.py
 The `python3 -m venv` step matters, not just good practice: on macOS,
 plain `pip install` can silently resolve to a leftover Python 2.7
 install instead of Python 3 - see Troubleshooting below.
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Troubleshooting
 
@@ -367,6 +393,8 @@ above (`python3 -m venv .venv && source .venv/bin/activate`), then run
 `python3 -m pip install -r requirements.txt` instead of bare `pip
 install` - that forces the install through Python 3's own pip regardless
 of what `pip` alone resolves to on your system.
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Tests + CI
 
@@ -392,6 +420,8 @@ key or network:
 pip install -r requirements-dev.txt
 pytest -q
 ```
+
+[↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Security notes
 
@@ -423,3 +453,5 @@ pytest -q
   (`>=X,<NEXT_MAJOR`), not left open-ended.
 
 Built with [Claude Code](https://claude.com/claude-code).
+
+[↑ Back to top](#cpp-to-rust-modernizer)
