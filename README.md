@@ -2,12 +2,11 @@
 
 Old C code can crash - or get hijacked - if it's fed input longer than it
 expects, like water overflowing a cup and soaking whatever's next to it.
-This repo takes one small, realistic example of that kind of bug, has
+This repo takes one small, realistic example of that kind of bug and has
 Claude rewrite it in Rust (a newer language built so that specific mistake
-can't happen), and then proves it: a separate program actually runs both
-versions and confirms the old one really does crash and the new one
-really doesn't. Claude doesn't get to grade its own work - something else
-checks it.
+can't happen). Then a separate, ordinary computer program - not Claude,
+and not a person checking by hand - actually runs both versions and
+confirms: the old one really does crash, and the new one really doesn't.
 
 The code and sample data here are made up for this demo, not from a real
 system. The bug itself is real, though - not a toy example. (For the full
