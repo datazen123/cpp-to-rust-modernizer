@@ -18,27 +18,24 @@ triggerable CWE-121), not a contrived toy.
 This repo is a direct, deliberate sibling to `legacy-js-modernizer` in this
 portfolio - same architecture (analyze → generate → deterministically
 verify → bounded corrective retry), same sustainment-asset-risk business
-domain, ported to a different language pair after research turned up
-something worth building around:
+domain, ported to a different language pair.
 
-**A real, currently-active, federally-funded contract doing exactly this
-task**, found via a direct USASpending.gov search (not press, not a
-web claim):
+**The underlying problem is global, not agency-specific.** A stack-based
+buffer overflow like the one in `legacy/asset_risk.c` is the same bug
+class behind real incidents across aviation, automotive, medical devices,
+and industrial control systems - anywhere C/C++ still runs code that
+can't be allowed to crash or be corrupted. That's the entire reason
+**MISRA C** exists: a coding standard originally built for the automotive
+industry, now used across aerospace, rail, industrial, and medical-device
+software specifically to eliminate undefined-behavior bugs like this one.
 
-- **GrammaTech, Inc.** - `HR001123C0079`, **$1,499,786**, awarded by
-  **DARPA**, **2023-02-28 → 2026-09-16 (active right now)**:
-  *"CRAM: C++ TO RUST (PROGRAMMING LANGUAGE) ASSISTED MIGRATION PH2, SBIR
-  PHASE II."*
-  https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
+A few real, checkable data points on how broad this shift already is:
 
-  This is DARPA's **TRACTOR** program: AI-assisted translation of legacy
-  C/C++ into safe Rust, with automated correctness verification - the same
-  two-part shape (generate, then independently verify) this repo
-  implements at a much smaller scale. This is meaningfully stronger
-  award-level evidence than most other repos in this portfolio have for
-  their own language/domain pairing - a real, named, currently-active,
-  federal SBIR Phase II contract doing this exact category of work, not a
-  job posting or a stated priority.
+- The White House Office of the National Cyber Director's **February 2024**
+  report, *"Back to the Building Blocks: A Path Toward Secure and
+  Measurable Software,"* calls on the software industry generally - not
+  just government contractors - to move away from memory-unsafe languages
+  like C/C++ for exactly this class of bug.
 
 - **NSA and CISA's own published guidance** (2022 NSA Cybersecurity
   Information Sheet, reinforced by CISA's Dec 2023 "The Case for Memory
@@ -50,24 +47,51 @@ web claim):
   **January 1, 2026** deadline for organizations to publish memory-safety
   roadmaps.
 
-**Where this repo's grounding stops, stated plainly**: this is DoD/DARPA-
-wide evidence, not USFK- or Korea-specific, and not a SecureBine-specific
-signal either - a direct check of securebine.com (homepage, capabilities,
-and partners pages) found zero programming languages or software-
-development services mentioned anywhere; their actual partner list is
-hardware/AV/physical-security integration vendors (Cisco, Juniper for
-networking; Crestron, AMX, Extron, Biamp for unified comms; Verkada,
-KABA-MAS for physical/access-control security). SecureBine reads as a
-networking/AV/physical-security integrator, not a software-development
-shop, and this repo doesn't pretend otherwise. Its value is as a general,
-verifiably-real, DoD-relevant systems-engineering credential - it stands on
-the DARPA TRACTOR parallel, not on a claimed SecureBine fit.
+- One concrete, currently-funded example of this shift already in motion:
+  DARPA's **TRACTOR** program is paying **GrammaTech, Inc.**
+  (`HR001123C0079`, **$1,499,786**, **2023-02-28 → 2026-09-16**, active
+  right now) to build AI-assisted C++-to-Rust migration with automated
+  correctness verification - the same two-part shape (generate, then
+  independently verify) this repo implements at a much smaller scale.
+  https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
 
 **On JavaScript specifically** (this repo's sibling's language): browser-
 based front-end modernization remains a real, undisplaced niche - no
 language cited above competes with JS/TypeScript in a browser. JS's
 absence from the NSA/CISA list reflects a different problem domain
 (systems/native-code memory safety), not a verdict on JS's own viability.
+
+## Rust practices, grounded in real sources
+
+The generation prompt in `modernize.py` requires patterns drawn from real,
+established Rust engineering references - not invented house style:
+
+- **[Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html)**
+  (the official rust-lang project) - use the type system instead of
+  stringly-typed data. `risk` is a proper `enum RiskLevel`, not a `String`
+  - the compiler guarantees there are exactly three tiers, not "whatever
+  text happened to be assigned this time."
+
+- **[The Rust Performance Book](https://nnethercote.github.io/perf-book/)**
+  (Nicholas Nethercote - the standard community reference for Rust
+  performance) - lock stdout once and write through a single buffered
+  writer, instead of one `println!` syscall per output record.
+
+- **RustBelt** (Jung, Jourdan, Krebbers, Dreyer - *Proc. ACM Program.
+  Lang.* 2, POPL, Article 66, 2018) - the peer-reviewed, machine-checked
+  formal proof that Rust's ownership type system is actually memory-safe
+  when `unsafe` isn't used. This is the theoretical grounding behind why
+  this repo's zero-`unsafe` hard gate (see Architecture below) is a real
+  safety guarantee, not a style preference.
+
+- Two peer-reviewed empirical studies on where Rust's safety guarantees
+  actually break down in practice - both point at the same place, `unsafe`
+  code: **["Understanding Memory and Thread Safety Practices and Issues in
+  Real-World Rust Programs"](https://cseweb.ucsd.edu/~yiying/RustStudy-PLDI20.pdf)**
+  (Qin et al., PLDI 2020) and
+  **["Is Rust Used Safely by Software Developers?"](https://www.cs.virginia.edu/~bjc8c/papers/evans20rust.pdf)**
+  (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
+  treats the unsafe-block count as a hard gate rather than a suggestion.
 
 ## The real bug
 
@@ -135,25 +159,29 @@ Run end-to-end against the real Anthropic API (`claude-sonnet-4-5`), first
 attempt, no correction pass needed:
 
 - **Analysis**: correctly named `CWE-121` at the exact `notes_mention_failure()`
-  line, plus reasonably flagged three secondary hygiene issues (unchecked
-  `atoi()`, a technically-safe-but-fragile `strcpy` on a hardcoded literal,
-  an unbounded record count) that aren't the planted bug but are real,
-  legitimate observations about the same file.
-- **Generated Rust**: zero `unsafe` blocks, uses an enum for risk levels
-  (cleaner than a hand-written reference version would have bothered with),
-  and defensively `continue`s past malformed lines instead of panicking.
+  line, plus 7 additional, legitimate secondary observations about the
+  same file (an unvalidated `atoi()` with no overflow/zero-division
+  handling, a fragile `strncpy` null-termination pattern, an unbounded
+  `fgets` line-splitting edge case, a `strcpy` onto a fixed buffer from
+  string literals, a `strtok` dangling-pointer risk if the code were ever
+  refactored, and silent truncation past `MAX_RECORDS`) - none are the
+  planted bug, all are real, checkable observations about this file.
+- **Generated Rust**: zero `unsafe` blocks; `risk` is a proper
+  `enum RiskLevel` deriving `Ord` (not a `String`), output goes through a
+  single locked `BufWriter`, and every function carries a `///` doc
+  comment - the practices required in "Rust practices, grounded in real
+  sources" above, not hand-tuned after the fact.
 - **Verification**: `{"ok": true}` on all three gates - full detail in
   `modernized/verification_result.json`. The Rust binary handles the exact
   input that crashes the C binary under AddressSanitizer:
   `VEH-999|20|1|medium` printed cleanly, no crash.
 - **clippy** (Rust's own standard linter, run via `clippy-driver` directly
-  and reported but non-blocking - see "Static analysis" below): the first
-  live run's generated code triggered 2 real `clippy::manual_unwrap_or`
-  warnings (a `match` reimplementing `.unwrap_or()`); a later re-run
-  generated idiomatic code that triggered zero. Both are real, reported
-  results, not cherry-picked - Claude's output style varies run to run,
-  and this repo surfaces that honestly rather than showing only the clean
-  run.
+  and reported but non-blocking - see "Static analysis" below): this run's
+  generated code triggered 1 real warning, `unused_imports` on
+  `std::cmp::Ordering` (left over from deriving `Ord` on `RiskLevel`,
+  which already provides `.cmp()`). Reported as-is, not cherry-picked or
+  hand-fixed - Claude's output style varies run to run, and this repo
+  surfaces that honestly rather than showing only a clean run.
 
 ## Static analysis
 

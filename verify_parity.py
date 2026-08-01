@@ -13,7 +13,7 @@ portfolio. Three independent checks, all required to pass:
    overflow-triggering input and confirm AddressSanitizer genuinely reports
    a stack-buffer-overflow (the vulnerability is observed, not asserted).
    Then run the modernized Rust binary against the identical input and
-   confirm it does NOT crash - the DARPA TRACTOR value proposition (see
+   confirm it does NOT crash - the memory-safety value proposition (see
    README), made concrete and runnable rather than just claimed.
 
 3. A cheap, real static check used in actual Rust security review (the same

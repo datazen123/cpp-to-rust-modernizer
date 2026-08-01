@@ -8,10 +8,12 @@ changes.
 
 ## This repo's role
 
-Claude-driven C-to-Rust migration, directly grounded in a real, active
-DARPA award (GrammaTech, `HR001123C0079`, $1.5M, "C++ TO RUST ASSISTED
-MIGRATION," the TRACTOR program) - the single strongest piece of AWARD-
-level evidence anywhere in this portfolio. `legacy/asset_risk.c` has a
+Claude-driven C-to-Rust migration, targeting the same CWE-121 class of bug
+behind memory-safety migration efforts industry-wide (NSA/CISA, the White
+House ONCD, MISRA C's safety-critical lineage, and - as one concrete
+funded example - DARPA's TRACTOR program via GrammaTech,
+`HR001123C0079`, $1.5M; see README "Why this exists" for the full
+picture). `legacy/asset_risk.c` has a
 real, genuinely-triggerable CWE-121 stack buffer overflow (confirmed live
 under AddressSanitizer). `verify_parity.py` is the deterministic proof
 engine: compiles both languages, checks standard behavioral parity,
@@ -21,11 +23,13 @@ blocks (hard gate), and runs real `clippy` (reported, non-blocking).
 `fuzz_legacy.py` adds randomized black-box fuzzing beyond the one
 hand-crafted adversarial input.
 
-**Status (2026-07-27)**: 33/33 tests passing, live-verified end-to-end
-(first attempt, no correction pass needed on the last full run). Fuzzing
-result: 663/2000 random inputs crash the legacy binary (33.1%), minimum
-crashing `condition_notes` length exactly 32 bytes - matching the known
-buffer boundary precisely.
+**Status (2026-08-01)**: 33/33 tests passing, live-verified end-to-end
+(first attempt, no correction pass needed on the last full run). Generated
+Rust now derives `Ord` on a `RiskLevel` enum instead of a stringly-typed
+risk field, and writes through a single `BufWriter` - see README "Rust
+practices, grounded in real sources". Fuzzing result: 663/2000 random
+inputs crash the legacy binary (33.1%), minimum crashing `condition_notes`
+length exactly 32 bytes - matching the known buffer boundary precisely.
 
 **Toolchain note**: this repo needs `clang`/`gcc`, `rustc`, and
 `clippy-driver` on `PATH` (see README "Running it"). The original

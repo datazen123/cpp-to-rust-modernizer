@@ -1,11 +1,14 @@
 """
-Claude-driven legacy-to-modern migration: C to Rust, the same underlying
-category DARPA's TRACTOR program is funding GrammaTech to build
-(HR001123C0079, "C++ TO RUST (PROGRAMMING LANGUAGE) ASSISTED MIGRATION",
-$1.5M, active through Sept 2026 - see README). Reads real (synthetic)
-legacy C with a genuine CWE-121 stack-based buffer overflow, produces a
-structured memory-safety analysis, then generates an idiomatic, safe
-(no `unsafe`) Rust replacement.
+Claude-driven legacy-to-modern migration: C to Rust, targeting the same
+class of bug (CWE-121, stack-based buffer overflow) behind memory-safety
+migration efforts across aviation, automotive, medical-device, and
+industrial-control software worldwide - not a single agency's problem
+(see README "Why this exists"). Reads real (synthetic) legacy C with a
+genuine CWE-121 stack-based buffer overflow, produces a structured
+memory-safety analysis, then generates an idiomatic, safe (no `unsafe`)
+Rust replacement, following the practices cited in README "Rust
+practices, grounded in real sources" (Rust API Guidelines, the Rust
+Performance Book).
 
 The generated Rust is then run through verify_parity.py automatically -
 not a manual follow-up step - which is the actual source of truth on
@@ -54,7 +57,21 @@ RUST_HARD_REQUIREMENTS = """Hard requirements for the Rust replacement:
   String/Vec/str methods (e.g. to_lowercase().contains(...)) which have no
   fixed capacity and cannot overflow. This is the entire point of the
   migration - re-implementing the C bug in an `unsafe` block would defeat
-  it completely."""
+  it completely.
+- Represent the risk tier as an enum (e.g. `enum RiskLevel { High, Medium,
+  Low }`), not a `String` - implement `Display` for the pipe-delimited
+  output, and derive `PartialEq, Eq, PartialOrd, Ord` so sorting is
+  exhaustive and compiler-checked. Per the Rust API Guidelines
+  (rust-lang.github.io/api-guidelines): use the type system instead of a
+  stringly-typed value that could hold any text.
+- Write output through a single locked, buffered writer
+  (`io::stdout().lock()` wrapped in a `BufWriter`), not one `println!`
+  call per record - the standard recommendation in the Rust Performance
+  Book (nnethercote.github.io/perf-book) for programs that print many
+  lines.
+- Add a `///` doc comment on every function stating what it does and any
+  invariant it relies on, per the Rust API Guidelines' documentation
+  conventions."""
 
 
 def strip_fences(text: str) -> str:
