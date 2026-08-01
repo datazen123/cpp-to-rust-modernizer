@@ -1,10 +1,9 @@
 /* Legacy sustainment-asset risk scoring - C, last touched ~2015 per commit
- * log on the old system. Same business rules as this portfolio's
- * legacy-js-modernizer repo (days-since-check / overdue / risk-tier logic
- * with a "fail" keyword bump) - same domain, ported to Rust, the
- * direction memory-safety guidance worldwide (NSA/CISA, the White House
- * ONCD, MISRA C's safety-critical lineage - see README) points toward for
- * this class of bug.
+ * log on the old system (days-since-check / overdue / risk-tier logic with
+ * a "fail" keyword bump), ported to Rust, the direction memory-safety
+ * guidance worldwide (NSA/CISA, the White House ONCD, MISRA C's
+ * safety-critical lineage - see README) points toward for this class of
+ * bug.
  *
  * Reads records from stdin, one per line, pipe-delimited:
  *   id|last_checked_days_ago|check_interval_days|condition_notes

@@ -1,33 +1,35 @@
 # cpp-to-rust-modernizer
 
-Claude reads a real (synthetic) piece of legacy C - a sustainment-asset risk
-scoring utility - containing a genuine, planted CWE-121 stack-based buffer
-overflow, produces a structured memory-safety analysis, then generates an
-idiomatic, memory-safe Rust replacement. A separate, deterministic Python
-harness then **compiles both**, proves the C bug is real by triggering it
-under AddressSanitizer, and proves the Rust replacement handles the
-identical input safely - Claude doesn't get to grade its own homework, and
-neither does this repo's own claims about "safety" go unverified.
+Old C code can crash - or get hijacked - if it's fed input longer than it
+expects, like water overflowing a cup and soaking whatever's next to it.
+This repo takes one small, realistic example of that kind of bug, has
+Claude rewrite it in Rust (a newer language built so that specific mistake
+can't happen), and then proves it: a separate program actually runs both
+versions and confirms the old one really does crash and the new one
+really doesn't. Claude doesn't get to grade its own work - something else
+checks it.
 
-`legacy/asset_risk.c` and `data/*.txt` are synthetic sample data written for
-this demo - not from any real system. The vulnerability is real (a genuine,
-triggerable CWE-121), not a contrived toy.
+The code and sample data here are made up for this demo, not from a real
+system. The bug itself is real, though - not a toy example. (For the full
+technical detail - the exact function, line, and vulnerability class - see
+"The real bug" below.)
 
 ## Why this exists
 
-This repo is a direct, deliberate sibling to `legacy-js-modernizer` in this
-portfolio - same architecture (analyze → generate → deterministically
-verify → bounded corrective retry), same sustainment-asset-risk business
-domain, ported to a different language pair.
+This repo follows the same architecture as this portfolio's other
+legacy-modernization demos - analyze → generate → deterministically
+verify → bounded corrective retry - applied here to C-to-Rust migration
+specifically.
 
 **The underlying problem is global, not agency-specific.** A stack-based
 buffer overflow like the one in `legacy/asset_risk.c` is the same bug
 class behind real incidents across aviation, automotive, medical devices,
 and industrial control systems - anywhere C/C++ still runs code that
 can't be allowed to crash or be corrupted. That's the entire reason
-**MISRA C** exists: a coding standard originally built for the automotive
-industry, now used across aerospace, rail, industrial, and medical-device
-software specifically to eliminate undefined-behavior bugs like this one.
+**[MISRA C](https://misra.org.uk/)** exists: a coding standard originally
+built for the automotive industry, now used across aerospace, rail,
+industrial, and medical-device software specifically to eliminate
+undefined-behavior bugs like this one.
 
 A few real, checkable data points on how broad this shift already is:
 
@@ -54,44 +56,6 @@ A few real, checkable data points on how broad this shift already is:
   correctness verification - the same two-part shape (generate, then
   independently verify) this repo implements at a much smaller scale.
   https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
-
-**On JavaScript specifically** (this repo's sibling's language): browser-
-based front-end modernization remains a real, undisplaced niche - no
-language cited above competes with JS/TypeScript in a browser. JS's
-absence from the NSA/CISA list reflects a different problem domain
-(systems/native-code memory safety), not a verdict on JS's own viability.
-
-## Rust practices, grounded in real sources
-
-The generation prompt in `modernize.py` requires patterns drawn from real,
-established Rust engineering references - not invented house style:
-
-- **[Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html)**
-  (the official rust-lang project) - use the type system instead of
-  stringly-typed data. `risk` is a proper `enum RiskLevel`, not a `String`
-  - the compiler guarantees there are exactly three tiers, not "whatever
-  text happened to be assigned this time."
-
-- **[The Rust Performance Book](https://nnethercote.github.io/perf-book/)**
-  (Nicholas Nethercote - the standard community reference for Rust
-  performance) - lock stdout once and write through a single buffered
-  writer, instead of one `println!` syscall per output record.
-
-- **RustBelt** (Jung, Jourdan, Krebbers, Dreyer - *Proc. ACM Program.
-  Lang.* 2, POPL, Article 66, 2018) - the peer-reviewed, machine-checked
-  formal proof that Rust's ownership type system is actually memory-safe
-  when `unsafe` isn't used. This is the theoretical grounding behind why
-  this repo's zero-`unsafe` hard gate (see Architecture below) is a real
-  safety guarantee, not a style preference.
-
-- Two peer-reviewed empirical studies on where Rust's safety guarantees
-  actually break down in practice - both point at the same place, `unsafe`
-  code: **["Understanding Memory and Thread Safety Practices and Issues in
-  Real-World Rust Programs"](https://cseweb.ucsd.edu/~yiying/RustStudy-PLDI20.pdf)**
-  (Qin et al., PLDI 2020) and
-  **["Is Rust Used Safely by Software Developers?"](https://www.cs.virginia.edu/~bjc8c/papers/evans20rust.pdf)**
-  (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
-  treats the unsafe-block count as a hard gate rather than a suggestion.
 
 ## The real bug
 
@@ -153,6 +117,38 @@ legacy/asset_risk.c  (real CWE-121 stack buffer overflow, see above)
 - `verify_parity.py` - the actual proof, callable standalone
   (`python verify_parity.py`) or from `modernize.py`.
 
+## Rust practices, grounded in real sources
+
+The generation prompt in `modernize.py` requires patterns drawn from real,
+established Rust engineering references - not invented house style:
+
+- **[Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html)**
+  (the official rust-lang project) - use the type system instead of
+  stringly-typed data. `risk` is a proper `enum RiskLevel`, not a `String`
+  - the compiler guarantees there are exactly three tiers, not "whatever
+  text happened to be assigned this time."
+
+- **[The Rust Performance Book](https://nnethercote.github.io/perf-book/)**
+  (Nicholas Nethercote - the standard community reference for Rust
+  performance) - lock stdout once and write through a single buffered
+  writer, instead of one `println!` syscall per output record.
+
+- **RustBelt** (Jung, Jourdan, Krebbers, Dreyer - *Proc. ACM Program.
+  Lang.* 2, POPL, Article 66, 2018) - the peer-reviewed, machine-checked
+  formal proof that Rust's ownership type system is actually memory-safe
+  when `unsafe` isn't used. This is the theoretical grounding behind why
+  this repo's zero-`unsafe` hard gate (see Architecture above) is a real
+  safety guarantee, not a style preference.
+
+- Two peer-reviewed empirical studies on where Rust's safety guarantees
+  actually break down in practice - both point at the same place, `unsafe`
+  code: **["Understanding Memory and Thread Safety Practices and Issues in
+  Real-World Rust Programs"](https://cseweb.ucsd.edu/~yiying/RustStudy-PLDI20.pdf)**
+  (Qin et al., PLDI 2020) and
+  **["Is Rust Used Safely by Software Developers?"](https://www.cs.virginia.edu/~bjc8c/papers/evans20rust.pdf)**
+  (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
+  treats the unsafe-block count as a hard gate rather than a suggestion.
+
 ## Live result
 
 Run end-to-end against the real Anthropic API (`claude-sonnet-4-5`), first
@@ -177,11 +173,10 @@ attempt, no correction pass needed:
   `VEH-999|20|1|medium` printed cleanly, no crash.
 - **clippy** (Rust's own standard linter, run via `clippy-driver` directly
   and reported but non-blocking - see "Static analysis" below): this run's
-  generated code triggered 1 real warning, `unused_imports` on
+  generated code triggered 1 warning, `unused_imports` on
   `std::cmp::Ordering` (left over from deriving `Ord` on `RiskLevel`,
-  which already provides `.cmp()`). Reported as-is, not cherry-picked or
-  hand-fixed - Claude's output style varies run to run, and this repo
-  surfaces that honestly rather than showing only a clean run.
+  which already provides `.cmp()`). Claude's output style varies run to
+  run - this is whatever the most recent run actually produced.
 
 ## Static analysis
 
@@ -194,31 +189,38 @@ isn't a memory-safety signal, and gating on it would risk unnecessary
 correction-loop churn over stylistic preference rather than correctness.
 It's surfaced for a human reviewer, not silently discarded.
 
-## Fuzzing the legacy bug
+## Finding the bug two ways
 
-`fuzz_legacy.py` casts a wider net than the one hand-crafted adversarial
-input used in `verify_parity.py`'s safety proof: it generates randomized
-records (varying `condition_notes` length/content, malformed numeric
-fields, empty fields) and runs each through the real ASan-instrumented
-legacy binary, watching for AddressSanitizer to fire.
+`fuzz_legacy.py` runs two independent techniques against the legacy binary,
+beyond the one hand-crafted adversarial input used in `verify_parity.py`'s
+safety proof:
 
-**Named precisely, not oversold**: this is a randomized *black-box* fuzzer
-(random input generation + crash detection), not coverage-guided fuzzing
-(libFuzzer/AFL++). Apple's system `clang` doesn't ship the libFuzzer
-runtime (`libclang_rt.fuzzer_osx.a` is missing from the Command Line
-Tools install - confirmed by a failed link attempt, not assumed), and
-installing the full LLVM toolchain just for this demo wasn't judged worth
-the download. Said honestly rather than claiming a more sophisticated
-technique than what actually ran.
+**1. Random black-box fuzzing.** Generates randomized records (varying
+`condition_notes` length/content, malformed numeric fields, empty fields)
+and runs each through the real ASan-instrumented legacy binary, watching
+for AddressSanitizer to fire.
 
-**Actual measured result** (2,000 iterations, seed 42, ~30s runtime):
-**663 crashes (33.1%)** - the very first randomly-generated record already
-triggered AddressSanitizer, and the **minimum crashing `condition_notes`
-length observed across the whole run was exactly 32 bytes** - precisely
-matching the known fixed-buffer boundary in `notes_mention_failure()`.
-This is the real, useful finding: the CWE-121 overflow isn't a narrow,
-hand-crafted edge case - it's the single most common way to crash this
-program, reachable by *unguided* random input in the first attempt.
+Actual measured result (2,000 iterations, seed 42, ~30s runtime):
+**663 crashes (33.1%)**. The very first randomly-generated record already
+triggered AddressSanitizer, and the minimum crashing `condition_notes`
+length observed across the whole run was exactly 32 bytes - precisely
+matching the known fixed-buffer boundary in `notes_mention_failure()`. The
+overflow isn't a narrow, hand-crafted edge case - it's the single most
+common way to crash this program, reachable by unguided random input on
+the first attempt.
+
+**2. Static analysis.** Runs the real Clang Static Analyzer (`clang
+--analyze`, the `security` checker group) directly against the source -
+finding the bug through dataflow analysis, without running the program at
+all. Ships with Xcode Command Line Tools; no extra install.
+
+Actual measured result: **1 finding**, on the exact `strcpy` line, citing
+CWE-119 (the parent category of the planted CWE-121):
+
+```
+legacy/asset_risk.c:46:5: warning: Call to function 'strcpy' is insecure
+as it does not provide bounding of the memory buffer. [security.insecureAPI.strcpy]
+```
 
 ```bash
 python fuzz_legacy.py --iterations 2000 --seed 42
@@ -227,11 +229,8 @@ python fuzz_legacy.py --iterations 2000 --seed 42
 ## Real-data benchmark
 
 `benchmark.py` fetches a real file live from **NIST's own Juliet Test Suite
-for C/C++ v1.3** (via a public GitHub mirror of the official SARD release) -
-the same government-run labeled-vulnerability corpus that `legacy-js-
-modernizer`'s README explicitly noted has **no JavaScript test suite**,
-which is exactly why this repo, not that one, is the correct place to use
-it. The file (`CWE121_Stack_Based_Buffer_Overflow__CWE193_char_declare_cpy_01.c`)
+for C/C++ v1.3** (via a public GitHub mirror of the official SARD release).
+The file (`CWE121_Stack_Based_Buffer_Overflow__CWE193_char_declare_cpy_01.c`)
 is NIST-labeled in its own header comments as CWE-121.
 
 **Actual measured result**: Claude correctly identified `CWE-121`, and
@@ -240,10 +239,9 @@ additionally flagged `CWE-676` (use of a dangerous function) on both the
 since the "good" fix still uses `strcpy()`, just with a correctly-sized
 buffer. Full analysis in `benchmark_report.md`.
 
-This is a pass/fail check on one real, NIST-labeled case, not a statistical
-benchmark - stated plainly rather than manufacturing a precision/recall
-number from a sample size of one, same discipline as `legacy-js-
-modernizer`'s OWASP NodeGoat check.
+This is a pass/fail check on one real, NIST-labeled case, not a
+statistical benchmark - a sample size of one can't support a
+precision/recall number.
 
 ```bash
 python benchmark.py
@@ -297,7 +295,9 @@ round-trip parsing across hundreds of generated ticket-shaped inputs,
 unsafe-keyword check across generated surrounding contexts, not just one
 hand-picked example. `test_fuzz_legacy.py` covers the fuzzer's own
 deterministic generation logic (delimiter exclusion, reproducibility given
-a fixed seed). None need an API key or network:
+a fixed seed) plus a live run of the Clang Static Analyzer against the
+real buggy source, confirming it actually flags the bug. None need an API
+key or network:
 
 ```bash
 pip install -r requirements-dev.txt

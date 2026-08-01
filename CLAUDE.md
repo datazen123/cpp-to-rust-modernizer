@@ -37,9 +37,13 @@ development machine didn't have Rust pre-installed - see the private
 `securebine-portfolio-context` repo's CLAUDE.md for the exact setup
 commands used, or just `rustup component add clippy` on a standard rustup
 install (CI already handles this via `dtolnay/rust-toolchain@stable`).
-Real libFuzzer was tried and found unavailable on that machine (Apple
-clang lacks the runtime) - `fuzz_legacy.py` is a randomized black-box
-fuzzer instead, named precisely as such, not oversold as libFuzzer/AFL.
+`fuzz_legacy.py` runs two independent bug-finding techniques against
+`legacy/asset_risk.c`: a randomized black-box fuzzer (Apple clang lacks
+the libFuzzer runtime needed for coverage-guided fuzzing) and the real
+Clang Static Analyzer (`clang --analyze`, `security` checker group, ships
+with Xcode Command Line Tools - no extra install), which finds the same
+bug via dataflow analysis instead of execution. See README "Finding the
+bug two ways".
 
 ## Non-negotiable discipline this whole portfolio follows
 

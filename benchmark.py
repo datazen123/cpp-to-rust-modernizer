@@ -4,11 +4,8 @@ identify a real, officially-labeled vulnerability in a real reference
 codebase - not just the synthetic bug this repo wrote for itself?
 
 Fetches one file live from NIST's own Juliet Test Suite for C/C++ (the
-federal government's own labeled vulnerability corpus - the same one this
-repo's sibling, legacy-js-modernizer, explicitly could NOT use because it
-has no JavaScript test suite; C/C++ is exactly what Juliet covers, so this
-is the honest, correct use of that dataset this portfolio noted was
-unavailable elsewhere):
+federal government's own labeled vulnerability corpus - C/C++ is exactly
+what Juliet covers):
 
   CWE121_Stack_Based_Buffer_Overflow__CWE193_char_declare_cpy_01.c
   (via the arichardson/juliet-test-suite-c GitHub mirror of NIST's official
@@ -21,9 +18,7 @@ strcpy()". That's real, official, NIST-authored ground truth - not
 something this repo invented.
 
 This is a pass/fail check on one real, documented case, not a statistical
-benchmark - stated plainly rather than manufacturing a precision/recall
-number from a sample size of one, same discipline as legacy-js-modernizer's
-OWASP NodeGoat check.
+benchmark - a sample size of one can't support a precision/recall number.
 
 Run:
     export ANTHROPIC_API_KEY=sk-ant-...
