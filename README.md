@@ -20,6 +20,7 @@ technical detail - the exact function, line, and vulnerability class - see
 - [Architecture](#architecture)
 - [Rust practices, grounded in real sources](#rust-practices-grounded-in-real-sources)
 - [Live result](#live-result)
+- [Self-consistency check](#self-consistency-check)
 - [Static analysis](#static-analysis)
 - [Finding the bug two ways](#finding-the-bug-two-ways)
 - [Real-data benchmark](#real-data-benchmark)
@@ -204,6 +205,40 @@ attempt, no correction pass needed:
   `std::cmp::Ordering` (left over from deriving `Ord` on `RiskLevel`,
   which already provides `.cmp()`). Claude's output style varies run to
   run - this is whatever the most recent run actually produced.
+
+[↑ Back to top](#cpp-to-rust-modernizer)
+
+## Self-consistency check
+
+`self_consistency_check.py` applies
+[Wang, Wei, Schuurmans, Le, Chi, Narang, Chowdhery, Zhou, "Self-Consistency
+Improves Chain of Thought Reasoning in Language Models"](https://arxiv.org/abs/2203.11171)
+(ICLR 2023) to `analyze()`: instead of trusting one sample, it calls the
+same prompt 3 times against the identical `legacy/asset_risk.c` source.
+
+Unlike this portfolio's other self-consistency checks, `analyze()` doesn't
+assign a severity field to majority-vote - its one categorical judgment is
+CWE identification itself: does Claude name the real planted CWE-121 bug,
+every time?
+
+**Actual measured result** (3 samples):
+
+| Sample | CWE-121 identified | All CWEs found | Total risks noted |
+|---|---|---|---|
+| 0 | yes | CWE-121, CWE-476, CWE-787 | 6 |
+| 1 | yes | CWE-121 only | 5 |
+| 2 | yes | CWE-120, CWE-121, CWE-476, CWE-788 | 7 |
+
+**CWE-121 identified in 3/3 samples - unanimous.** What varied was
+everything *around* the planted bug: the secondary hygiene observations
+(5 to 7 per sample, different CWE codes each time). That's expected, not
+a defect - `analyze()` has no fixed list of secondary issues to be
+consistent about, unlike the one planted, labeled bug this repo is
+actually testing detection of.
+
+```bash
+python self_consistency_check.py [--samples N]
+```
 
 [↑ Back to top](#cpp-to-rust-modernizer)
 
@@ -405,7 +440,8 @@ covers JSON/fence handling and every branch of the correction-prompt
 builder (compile error, unsafe block, parity mismatch, safety-proof
 failure). `test_benchmark.py` covers the CWE-matching logic;
 `test_benchmark_modernization.py` covers the six-variant URL construction
-and the Rust-generation requirements text.
+and the Rust-generation requirements text; `test_self_consistency_check.py`
+covers the unanimous-agreement logic.
 `test_verify_parity_properties.py` adds Hypothesis property-based tests -
 round-trip parsing across hundreds of generated ticket-shaped inputs,
 "never crashes on arbitrary text," and word-boundary correctness for the

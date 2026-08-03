@@ -1,0 +1,31 @@
+[
+  {
+    "sample": 0,
+    "identified_cwe_121": true,
+    "cwes_found": [
+      "CWE-121",
+      "CWE-476",
+      "CWE-787"
+    ],
+    "total_risks_noted": 6
+  },
+  {
+    "sample": 1,
+    "identified_cwe_121": true,
+    "cwes_found": [
+      "CWE-121"
+    ],
+    "total_risks_noted": 5
+  },
+  {
+    "sample": 2,
+    "identified_cwe_121": true,
+    "cwes_found": [
+      "CWE-120",
+      "CWE-121",
+      "CWE-476",
+      "CWE-788"
+    ],
+    "total_risks_noted": 7
+  }
+]
