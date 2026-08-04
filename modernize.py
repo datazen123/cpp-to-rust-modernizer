@@ -85,9 +85,19 @@ def extract_json(text: str) -> dict:
         raise RuntimeError(f"Claude's response wasn't valid JSON: {exc}\nRaw response:\n{text}") from exc
 
 
-def call(client: AnthropicClient, system: str, user: str, max_tokens: int = 4096) -> str:
-    response = client.create(system=system, messages=[{"role": "user", "content": user}], max_tokens=max_tokens)
-    return "".join(b.text for b in response.content if b.type == "text")
+def call(client: AnthropicClient, system: str, user: str, max_tokens: int = 4096, prefill: str | None = None) -> str:
+    """`prefill`, when given, is sent as the start of the assistant's turn -
+    a documented Anthropic structured-output technique that makes markdown-
+    fence-wrapping structurally impossible for the response, rather than
+    relying only on stripping fences after the fact. Only meaningful for
+    calls that return JSON (analyze()); generate_modern_rust() returns raw
+    source with no fixed starting character, so it doesn't use this."""
+    messages = [{"role": "user", "content": user}]
+    if prefill is not None:
+        messages.append({"role": "assistant", "content": prefill})
+    response = client.create(system=system, messages=messages, max_tokens=max_tokens)
+    text = "".join(b.text for b in response.content if b.type == "text")
+    return (prefill + text) if prefill is not None else text
 
 
 def analyze(client: AnthropicClient, legacy_src: str) -> dict:
@@ -105,7 +115,7 @@ def analyze(client: AnthropicClient, legacy_src: str) -> dict:
     return extract_json(
         call(client, "You are a senior systems engineer doing a memory-safety audit before a Rust migration. "
                       "Be specific: name exact functions/lines, and use CWE IDs where they genuinely apply.",
-             prompt)
+             prompt, prefill="{")
     )
 
 

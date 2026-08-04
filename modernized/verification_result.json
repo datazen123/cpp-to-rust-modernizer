@@ -13,8 +13,8 @@
   },
   "clippy": {
     "ran": true,
-    "warning_count": 1,
-    "output": "warning: unused import: `std::cmp::Ordering`\n --> /Users/z0q1/Documents/wk-securebind/cpp-to-rust-modernizer/modernized/asset_risk.rs:1:5\n  |\n1 | use std::cmp::Ordering;\n  |     ^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` on by default\n\nwarning: 1 warning emitted\n\n"
+    "warning_count": 0,
+    "output": ""
   },
   "safety_proof": {
     "ok": true,
