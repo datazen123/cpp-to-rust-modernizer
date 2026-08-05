@@ -33,10 +33,10 @@ length exactly 32 bytes - matching the known buffer boundary precisely.
 
 **Toolchain note**: this repo needs `clang`/`gcc`, `rustc`, and
 `clippy-driver` on `PATH` (see README "Running it"). The original
-development machine didn't have Rust pre-installed - see the private
-`securebine-portfolio-context` repo's CLAUDE.md for the exact setup
-commands used, or just `rustup component add clippy` on a standard rustup
-install (CI already handles this via `dtolnay/rust-toolchain@stable`).
+development machine didn't have Rust pre-installed - see this portfolio's
+private cross-repo context repo's CLAUDE.md for the exact setup commands
+used, or just `rustup component add clippy` on a standard rustup install
+(CI already handles this via `dtolnay/rust-toolchain@stable`).
 `fuzz_legacy.py` runs two independent bug-finding techniques against
 `legacy/asset_risk.c`: a randomized black-box fuzzer (Apple clang lacks
 the libFuzzer runtime needed for coverage-guided fuzzing) and the real
@@ -77,5 +77,5 @@ pytest -q
 ```
 
 Full cross-repo strategy, founder research, and environment notes live in
-the private `datazen123/securebine-portfolio-context` repo - not
-duplicated here since this repo is public.
+this portfolio's private cross-repo context repo - not duplicated here
+since this repo is public.
