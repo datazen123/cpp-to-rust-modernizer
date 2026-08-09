@@ -33,6 +33,8 @@ technical detail - the exact function, line, and vulnerability class - see
 - [Troubleshooting](#troubleshooting)
 - [Tests + CI](#tests--ci)
 - [Security notes](#security-notes)
+- [Sources](#sources)
+- [Definitions / Acronyms](#definitions--acronyms)
 
 [↑ Back to top](#cpp-to-rust-modernizer)
 
@@ -48,7 +50,7 @@ buffer overflow like the one in `legacy/asset_risk.c` is the same bug
 class behind real incidents across aviation, automotive, medical devices,
 and industrial control systems - anywhere C/C++ still runs code that
 can't be allowed to crash or be corrupted. That's the entire reason
-**[MISRA C](https://misra.org.uk/)** exists: a coding standard originally
+**[MISRA C](https://misra.org.uk/)** [1] exists: a coding standard originally
 built for the automotive industry, now used across aerospace, rail,
 industrial, and medical-device software specifically to eliminate
 undefined-behavior bugs like this one.
@@ -57,13 +59,13 @@ A few real, checkable data points on how broad this shift already is:
 
 - The White House Office of the National Cyber Director's **February 2024**
   report, *"Back to the Building Blocks: A Path Toward Secure and
-  Measurable Software,"* calls on the software industry generally - not
+  Measurable Software,"* [2] calls on the software industry generally - not
   just government contractors - to move away from memory-unsafe languages
   like C/C++ for exactly this class of bug.
 
 - **NSA and CISA's own published guidance** (2022 NSA Cybersecurity
-  Information Sheet, reinforced by CISA's Dec 2023 "The Case for Memory
-  Safe Roadmaps" and a June 2025 update) names the languages it recommends
+  Information Sheet [3], reinforced by CISA's Dec 2023 "The Case for Memory
+  Safe Roadmaps" [3] and a June 2025 update) names the languages it recommends
   as C/C++ replacements: **C#, Go, Java, Python, Ruby, Rust, and Swift**
   (verified against multiple independent secondary sources after an
   earlier automated web-search summary incorrectly added JavaScript to
@@ -76,7 +78,7 @@ A few real, checkable data points on how broad this shift already is:
   (`HR001123C0079`, **$1,499,786**, **2023-02-28 → 2026-09-16**, active
   right now) to build AI-assisted C++-to-Rust migration with automated
   correctness verification - the same two-part shape (generate, then
-  independently verify) this repo implements at a much smaller scale.
+  independently verify) this repo implements at a much smaller scale. [4]
   https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
 
 [↑ Back to top](#cpp-to-rust-modernizer)
@@ -86,7 +88,7 @@ A few real, checkable data points on how broad this shift already is:
 `legacy/asset_risk.c`'s `notes_mention_failure()` copies an operator-
 supplied `condition_notes` field into a fixed 32-byte stack buffer with
 `strcpy()` and no length check - classic **CWE-121: Stack-based Buffer
-Overflow**, the exact category NIST's Juliet Test Suite catalogs and
+Overflow**, the exact category NIST's Juliet Test Suite [5] catalogs and
 NSA/CISA's guidance cites by name. It's not contrived to only trigger on
 adversarial input: any condition note of 32+ characters overflows it,
 including entirely mundane-looking maintenance notes.
@@ -143,6 +145,28 @@ legacy/asset_risk.c  (real CWE-121 stack buffer overflow, see above)
 - `verify_parity.py` - the actual proof, callable standalone
   (`python verify_parity.py`) or from `modernize.py`.
 
+**This split isn't a novel idea invented for this portfolio** - it's the
+same paradigm DARPA and DIU have spent years, and multiple named
+programs, proving out for military systems specifically, and this repo
+is arguably the closest match in the whole portfolio to how DARPA's own
+program did it. HACMS [15] didn't just claim seL4 made a helicopter's
+flight software safe - it proved it, live, by giving a red team full
+access to the helicopter's camera feed and virtual machine and confirming
+they still couldn't crash its flight-control software. `verify_parity.py`
+follows the identical logic at a much smaller scale: it doesn't trust
+Claude's claim that the generated Rust is memory-safe, it compiles the
+real adversarial input, runs it against both binaries under
+AddressSanitizer, and requires the actual observed crash/no-crash
+behavior to prove it. DARPA's current PROVERS/INSPECTA program [16]
+(started 2024, led by Collins Aerospace with Carnegie Mellon and UNSW
+Sydney) is built on the same Rust-plus-seL4-plus-formal-methods stack
+this class of migration work is part of. And DIU's own flagship
+generative-AI program, Thunderforge [17] (Scale AI, with Anduril's
+Lattice platform and Microsoft's LLMs, now supporting INDOPACOM and
+EUCOM), pairs its LLM-driven planning proposals with deterministic checks
+for the same reason: an untrusted proposal layer needs a layer that
+actually decides what's trusted, not one that just asks nicely.
+
 [↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Rust practices, grounded in real sources
@@ -151,18 +175,18 @@ The generation prompt in `modernize.py` requires patterns drawn from real,
 established Rust engineering references - not invented house style:
 
 - **[Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html)**
-  (the official rust-lang project) - use the type system instead of
+  [6] (the official rust-lang project) - use the type system instead of
   stringly-typed data. `risk` is a proper `enum RiskLevel`, not a `String`
   - the compiler guarantees there are exactly three tiers, not "whatever
   text happened to be assigned this time."
 
 - **[The Rust Performance Book](https://nnethercote.github.io/perf-book/)**
-  (Nicholas Nethercote - the standard community reference for Rust
+  [7] (Nicholas Nethercote - the standard community reference for Rust
   performance) - lock stdout once and write through a single buffered
   writer, instead of one `println!` syscall per output record.
 
 - **RustBelt** (Jung, Jourdan, Krebbers, Dreyer - *Proc. ACM Program.
-  Lang.* 2, POPL, Article 66, 2018) - the peer-reviewed, machine-checked
+  Lang.* 2, POPL, Article 66, 2018) [8] - the peer-reviewed, machine-checked
   formal proof that Rust's ownership type system is actually memory-safe
   when `unsafe` isn't used. This is the theoretical grounding behind why
   this repo's zero-`unsafe` hard gate (see Architecture above) is a real
@@ -172,9 +196,9 @@ established Rust engineering references - not invented house style:
   actually break down in practice - both point at the same place, `unsafe`
   code: **["Understanding Memory and Thread Safety Practices and Issues in
   Real-World Rust Programs"](https://cseweb.ucsd.edu/~yiying/RustStudy-PLDI20.pdf)**
-  (Qin et al., PLDI 2020) and
+  [9] (Qin et al., PLDI 2020) and
   **["Is Rust Used Safely by Software Developers?"](https://www.cs.virginia.edu/~bjc8c/papers/evans20rust.pdf)**
-  (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
+  [10] (Evans, Campbell, Soffa, ICSE 2020). Both are part of why this repo
   treats the unsafe-block count as a hard gate rather than a suggestion.
 
 [↑ Back to top](#cpp-to-rust-modernizer)
@@ -215,7 +239,7 @@ attempt, no correction pass needed:
 `self_consistency_check.py` applies
 [Wang, Wei, Schuurmans, Le, Chi, Narang, Chowdhery, Zhou, "Self-Consistency
 Improves Chain of Thought Reasoning in Language Models"](https://arxiv.org/abs/2203.11171)
-(ICLR 2023) to `analyze()`: instead of trusting one sample, it calls the
+(ICLR 2023) [11] to `analyze()`: instead of trusting one sample, it calls the
 same prompt 3 times against the identical `legacy/asset_risk.c` source.
 
 Unlike this portfolio's other self-consistency checks, `analyze()` doesn't
@@ -247,9 +271,11 @@ python self_consistency_check.py [--samples N]
 ## Prompt injection resistance test
 
 `injection_test.py` tests against
-[OWASP's Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/),
-which ranks prompt injection as **LLM01:2025** - the #1 risk for LLM
-applications. This repo's attack surface is different from the rest of
+[OWASP's Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/)
+[12], which ranks prompt injection as **LLM01:2025** - the #1 risk for LLM
+applications - and against NIST's own adversarial-ML taxonomy, which
+independently names the same attack class (Prompt Injection,
+NISTAML.018) [22]. This repo's attack surface is different from the rest of
 this portfolio: the untrusted input Claude reads is the C source file
 itself, not a JSON data field - a realistic supply-chain scenario, since
 a legacy codebase or compromised dependency is exactly the kind of thing
@@ -461,15 +487,30 @@ python benchmark_second_cwe.py
 ## Deployment path
 
 This demo calls the Anthropic API directly. A production version for a
-DoD-adjacent client would more likely run through
-**[Ask Sage](https://www.asksage.ai/)** - the IL5/IL6-authorized multi-model
-gateway built for Defense Industrial Base contractors (`llm_client.py`
-includes an `AskSageClient` built from Ask Sage's
-[public API docs](https://github.com/Ask-Sage/AskSage-Open-Source-Community),
-untested pending an account). Claude's status specifically at the DoD-
-contract level has been politically contested since early 2026 (excluded
-from GenAI.mil's provider list) - a reason to keep this adapter provider-
-agnostic, not a reason to avoid building with Claude.
+DoD-adjacent client would route through whatever government-authorized
+multi-model gateway that client's environment has already adopted - as
+of 2026 this landscape is genuinely fragmented by branch and use case,
+not converged on one platform. **[Ask Sage](https://www.asksage.ai/)**
+[13] (IL5/IL6-authorized, built for Defense Industrial Base contractors
+specifically, and recently acquired by BigBear.ai for $250M [18]) is
+the closest DIB-contractor analog and the only one with a working
+adapter here (`llm_client.py`'s `AskSageClient`, built from Ask Sage's
+[public API docs](https://github.com/Ask-Sage/AskSage-Open-Source-Community)
+[14], untested pending an account) - but the Army's own production
+tool, the Enterprise LLM Workspace, brokers 23+ approved commercial
+models rather than standardizing on one [19], and a real interservice
+dispute (the Army blocked the Air Force's NIPRGPT from its own networks
+in April 2025 over governance concerns [20]) shows betting the whole
+integration story on a single named platform is itself a risk. Claude's
+status specifically at the DoD-contract level has been politically
+contested since early 2026 (excluded from GenAI.mil's three-vendor
+provider list of Gemini/Grok/ChatGPT [21]) - a reason to keep this
+adapter provider-agnostic, not a reason to avoid building with Claude.
+As of January 2026, building this way is explicit DoD procurement
+policy: the Secretary of War's AI Strategy memo directs every
+AI-acquiring program to enforce Modular Open System Architectures
+"sufficient for third-party integration without prime contractor
+support" [23].
 
 Worth noting for this specific repo: DARPA's own TRACTOR program (the real
 contract cited above) is run by GrammaTech under a DARPA SBIR vehicle, not
@@ -599,5 +640,166 @@ pytest -q
   (`>=X,<NEXT_MAJOR`), not left open-ended.
 
 Built with [Claude Code](https://claude.com/claude-code).
+
+[↑ Back to top](#cpp-to-rust-modernizer)
+
+## Sources
+
+Numbered references for every real-world claim in this README, in the
+order first cited:
+
+[1] MISRA, *MISRA C* coding standard. https://misra.org.uk/
+
+[2] Office of the National Cyber Director, "Back to the Building Blocks:
+A Path Toward Secure and Measurable Software," February 2024.
+https://bidenwhitehouse.archives.gov/wp-content/uploads/2024/02/Final-ONCD-Technical-Report.pdf
+
+[3] NSA, "Software Memory Safety," Cybersecurity Information Sheet,
+November 2022.
+https://media.defense.gov/2022/Nov/10/2003112742/-1/-1/0/CSI_SOFTWARE_MEMORY_SAFETY.PDF
+— see also CISA, NSA, FBI, and international partners, "The Case for
+Memory Safe Roadmaps" (sets the January 1, 2026 roadmap-publication
+deadline), December 2023.
+https://www.cisa.gov/sites/default/files/2023-12/The-Case-for-Memory-Safe-Roadmaps-508c.pdf
+— and NSA, "Memory Safe Languages: Reducing Vulnerabilities in
+Modern Software Development," June 2025 update.
+https://media.defense.gov/2025/Jun/23/2003742198/-1/-1/0/CSI_MEMORY_SAFE_LANGUAGES_REDUCING_VULNERABILITIES_IN_MODERN_SOFTWARE_DEVELOPMENT.PDF
+(Automated fetch of nsa.gov/media.defense.gov PDFs is blocked by their
+own bot protection in this pass - URLs confirmed via independent
+secondary listings and the agencies' own press releases, not a direct
+fetch.)
+
+[4] USAspending.gov, contract `HR001123C0079`, GrammaTech, Inc.,
+$1,499,786, DARPA TRACTOR program.
+https://www.usaspending.gov/award/CONT_AWD_HR001123C0079_9700_-NONE-_-NONE-
+
+[5] NIST, Software Assurance Reference Dataset (SARD), *Juliet Test
+Suite for C/C++ v1.3*. https://samate.nist.gov/SARD/test-suites/112 —
+fetched in this repo via the public GitHub mirror
+https://github.com/arichardson/juliet-test-suite-c
+
+[6] rust-lang project, *Rust API Guidelines*.
+https://rust-lang.github.io/api-guidelines/checklist.html
+
+[7] Nethercote, N., *The Rust Performance Book*.
+https://nnethercote.github.io/perf-book/
+
+[8] Jung, Jourdan, Krebbers, Dreyer, "RustBelt: Securing the Foundations
+of the Rust Programming Language," Proc. ACM Program. Lang. 2, POPL,
+Article 66, 2018. https://doi.org/10.1145/3158154 (paper mirror:
+https://plv.mpi-sws.org/rustbelt/popl18/)
+
+[9] Qin et al., "Understanding Memory and Thread Safety Practices and
+Issues in Real-World Rust Programs," PLDI 2020.
+https://cseweb.ucsd.edu/~yiying/RustStudy-PLDI20.pdf
+
+[10] Evans, Campbell, Soffa, "Is Rust Used Safely by Software
+Developers?," ICSE 2020.
+https://www.cs.virginia.edu/~bjc8c/papers/evans20rust.pdf
+
+[11] Wang, Wei, Schuurmans, Le, Chi, Narang, Chowdhery, Zhou,
+"Self-Consistency Improves Chain of Thought Reasoning in Language
+Models," ICLR 2023. https://arxiv.org/abs/2203.11171
+
+[12] OWASP, *Top 10 for LLM Applications* (LLM01:2025, Prompt
+Injection). https://genai.owasp.org/llm-top-10/
+
+[13] Ask Sage - IL5/IL6-authorized multi-model gateway for Defense
+Industrial Base contractors. https://www.asksage.ai/
+
+[14] Ask Sage, public API documentation / open-source community repo.
+https://github.com/Ask-Sage/AskSage-Open-Source-Community
+
+[15] DARPA, *High-Assurance Cyber Military Systems (HACMS)*.
+https://www.darpa.mil/research/programs/high-assurance-cyber-military-systems
+
+[16] DARPA, *Pipelined Reasoning of Verifiers Enabling Robust Systems
+(PROVERS)*. https://www.darpa.mil/research/programs/pipelined-reasoning-of-verifiers-enabling-robust-systems
+- see also Trustworthy Systems, *INSPECTA*. https://trustworthy.systems/projects/INSPECTA
+
+[17] Defense Innovation Unit, "DIU's Thunderforge Project to Integrate
+Commercial AI-Powered Decision-Making."
+https://www.diu.mil/latest/dius-thunderforge-project-to-integrate-commercial-ai-powered-decision-making
+- see also DefenseScoop, "Combatant commands to get new generative AI
+tech for operational planning, wargaming," March 2025.
+https://defensescoop.com/2025/03/05/diu-thunderforge-scale-ai-combatant-commands-indopacom-eucom/
+
+[18] BigBear.ai, "BigBear.ai Finalizes $250M Acquisition of Ask Sage,"
+December 2025.
+https://bigbear.ai/newsroom/bigbear-ai-finalizes-250m-acquisition-of-ask-sage/
+
+[19] DefenseScoop, "Army's CamoGPT won't be phased out as Pentagon
+embraces more commercial genAI products," January 27, 2026.
+https://defensescoop.com/2026/01/27/army-camogpt-dod-genai-mil/
+
+[20] Air & Space Forces Magazine, "Army Blocks Air Force's AI Program
+Over Data Security Concerns."
+https://www.airandspaceforces.com/fearing-data-leaks-army-blocks-air-force-ai-program-from-its-networks/
+
+[21] Breaking Defense, "ChatGPT will be available to 3 million military
+users on GenAI.mil," February 2026.
+https://breakingdefense.com/2026/02/chatgpt-will-be-available-to-3-million-military-users-on-genai-mil/
+
+[22] NIST, *AI 100-2e2025: Adversarial Machine Learning: A Taxonomy and
+Terminology of Attacks and Mitigations*, March 2025 (Prompt Injection,
+NISTAML.018). https://doi.org/10.6028/NIST.AI.100-2e2025
+
+[23] Secretary of War, Memorandum, "Artificial Intelligence Strategy for
+the Department of War," January 9, 2026 (Modular Open System
+Architectures directive).
+https://www.dmi-ida.org/knowledge-base-detail/AI-Strategy-DOW-Memo -
+see also ExecutiveGov, "Pete Hegseth Introduces War Department Strategy
+to Accelerate AI Adoption."
+https://www.executivegov.com/articles/dow-ai-adoption-strategy-hegseth
+
+[↑ Back to top](#cpp-to-rust-modernizer)
+
+## Definitions / Acronyms
+
+Plain-English definitions for the domain-specific terms and acronyms used
+in this README, each linked to the section where it's used in fuller
+context:
+
+- **ASan (AddressSanitizer)** - a real memory-error detection tool built
+  into Clang/GCC that this repo uses to prove the legacy C bug actually
+  crashes, and that the generated Rust doesn't. See
+  [Architecture](#architecture).
+- **CWE** - Common Weakness Enumeration, the standard taxonomy for a
+  class of software bug (this repo's planted bug is CWE-121, a stack
+  buffer overflow). See [The real bug](#the-real-bug).
+- **DIU** - Defense Innovation Unit, the DoD organization behind the
+  Thunderforge program cited in this repo's architecture rationale. See
+  [Architecture](#architecture).
+- **EUCOM** - U.S. European Command, one of the two combatant commands
+  Thunderforge supports. See [Architecture](#architecture).
+- **IL5 / IL6** - DoD Impact Level 5/6, the government's cloud-security
+  certification tiers for sensitive/controlled and classified data. See
+  [Deployment path](#deployment-path).
+- **INDOPACOM** - U.S. Indo-Pacific Command, the other combatant command
+  Thunderforge supports. See [Architecture](#architecture).
+- **MISRA C** - a real coding standard for safety-critical C, originally
+  written for automotive use and now applied across aviation, medical
+  devices, and industrial control systems. See [Why this exists](#why-this-exists).
+- **NSA** - National Security Agency, co-author (with CISA and others) of
+  the real memory-safe-language guidance cited in this repo. See
+  [Why this exists](#why-this-exists).
+- **ONCD** - Office of the National Cyber Director, the White House
+  office behind the Feb 2024 report calling on industry to move off
+  memory-unsafe languages. See [Why this exists](#why-this-exists).
+- **PLDI / POPL / ICSE** - Programming Language Design and
+  Implementation, Principles of Programming Languages, and International
+  Conference on Software Engineering - the three peer-reviewed academic
+  conferences the Rust-safety research cited in this repo was published
+  at. See [Rust practices, grounded in real sources](#rust-practices-grounded-in-real-sources).
+- **SARD** - Software Assurance Reference Dataset, NIST's public
+  vulnerability test-suite collection this repo's six-variant benchmark
+  is drawn from. See [Sources](#sources).
+- **SBIR** - Small Business Innovation Research, the federal contract
+  vehicle DARPA's TRACTOR award to GrammaTech runs under. See
+  [Deployment path](#deployment-path).
+- **TRACTOR** - Translating All C To Rust, DARPA's real, active program
+  paying GrammaTech to do AI-assisted C-to-Rust migration with automated
+  verification - methodologically the closest real-world match to what
+  this repo demonstrates. See [Why this exists](#why-this-exists).
 
 [↑ Back to top](#cpp-to-rust-modernizer)
