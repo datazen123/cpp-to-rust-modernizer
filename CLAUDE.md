@@ -23,13 +23,20 @@ blocks (hard gate), and runs real `clippy` (reported, non-blocking).
 `fuzz_legacy.py` adds randomized black-box fuzzing beyond the one
 hand-crafted adversarial input.
 
-**Status (2026-08-01)**: 33/33 tests passing, live-verified end-to-end
+**Status (2026-08-10)**: 67/67 tests passing, live-verified end-to-end
 (first attempt, no correction pass needed on the last full run). Generated
 Rust now derives `Ord` on a `RiskLevel` enum instead of a stringly-typed
 risk field, and writes through a single `BufWriter` - see README "Rust
 practices, grounded in real sources". Fuzzing result: 663/2000 random
 inputs crash the legacy binary (33.1%), minimum crashing `condition_notes`
 length exactly 32 bytes - matching the known buffer boundary precisely.
+`self_consistency_check.py` now also runs discrete semantic entropy
+(Farquhar et al., *Nature* 2024) over the sampled `summary` text from
+`analyze()`, in `semantic_entropy.py` - the one signal this repo's
+self-consistency check didn't have before, since `analyze()` has no
+severity field to majority-vote. See README "Self-consistency check" for
+the live-measured result (default samples bumped 3->5 per the paper's
+own guidance).
 
 **Toolchain note**: this repo needs `clang`/`gcc`, `rustc`, and
 `clippy-driver` on `PATH` (see README "Running it"). The original

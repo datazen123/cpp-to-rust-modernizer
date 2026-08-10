@@ -1,31 +1,67 @@
-[
-  {
-    "sample": 0,
-    "identified_cwe_121": true,
-    "cwes_found": [
-      "CWE-121",
-      "CWE-476",
-      "CWE-787"
-    ],
-    "total_risks_noted": 6
-  },
-  {
-    "sample": 1,
-    "identified_cwe_121": true,
-    "cwes_found": [
-      "CWE-121"
-    ],
-    "total_risks_noted": 5
-  },
-  {
-    "sample": 2,
-    "identified_cwe_121": true,
-    "cwes_found": [
-      "CWE-120",
-      "CWE-121",
-      "CWE-476",
-      "CWE-788"
-    ],
-    "total_risks_noted": 7
+{
+  "samples": [
+    {
+      "sample": 0,
+      "identified_cwe_121": true,
+      "cwes_found": [
+        "CWE-120",
+        "CWE-121",
+        "CWE-190",
+        "CWE-369"
+      ],
+      "total_risks_noted": 6,
+      "summary": "This program reads pipe-delimited asset inspection records from stdin (asset ID, days since last check, check interval, and condition notes), computes risk levels (high/medium/low) based on overdue ratio and presence of the word 'fail' in condition notes, then outputs the records sorted by risk tier (high first). It is a legacy sustainment-asset risk scoring tool from circa 2015."
+    },
+    {
+      "sample": 1,
+      "identified_cwe_121": true,
+      "cwes_found": [
+        "CWE-120",
+        "CWE-121"
+      ],
+      "total_risks_noted": 6,
+      "summary": "This program reads asset maintenance records from stdin (pipe-delimited: asset ID, days since last check, check interval, condition notes), computes risk scores based on overdue ratios and failure keywords in condition notes, then outputs results sorted by risk tier (high/medium/low). It is designed to help prioritize maintenance activities for sustainment assets."
+    },
+    {
+      "sample": 2,
+      "identified_cwe_121": true,
+      "cwes_found": [
+        "CWE-120",
+        "CWE-121",
+        "CWE-20"
+      ],
+      "total_risks_noted": 6,
+      "summary": "This program reads sustainment-asset records from stdin (pipe-delimited: id, days since last check, check interval, condition notes), computes a risk tier (high/medium/low) based on overdue ratio and presence of 'fail' keyword in notes, then outputs sorted results (highest risk first) to stdout."
+    },
+    {
+      "sample": 3,
+      "identified_cwe_121": true,
+      "cwes_found": [
+        "CWE-120",
+        "CWE-121",
+        "CWE-170",
+        "CWE-190"
+      ],
+      "total_risks_noted": 7,
+      "summary": "This program reads pipe-delimited sustainment asset records from stdin (asset ID, days since last check, check interval, condition notes), computes a risk tier (high/medium/low) based on overdue ratio and presence of 'fail' keyword in notes, sorts results by risk descending, and prints them to stdout. It processes up to 256 records."
+    },
+    {
+      "sample": 4,
+      "identified_cwe_121": true,
+      "cwes_found": [
+        "CWE-120",
+        "CWE-121",
+        "CWE-131",
+        "CWE-190"
+      ],
+      "total_risks_noted": 8,
+      "summary": "This program reads pipe-delimited sustainment asset records from stdin (asset ID, days since last check, check interval, condition notes), computes a risk tier (high/medium/low) based on whether the asset is overdue for inspection and whether the condition notes mention 'fail', then outputs the results sorted by risk level (high first). It is a maintenance tracking tool for physical assets."
+    }
+  ],
+  "summary_semantic_entropy": {
+    "semantic_entropy_bits": 0.0,
+    "semantic_entropy_normalized": 0.0,
+    "meaning_cluster_count": 1,
+    "samples_clustered": 5
   }
-]
+}

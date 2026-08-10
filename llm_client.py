@@ -25,20 +25,29 @@ class AnthropicClient:
         self._client = anthropic.Anthropic(api_key=api_key)
         self.model = model
 
-    def create(self, *, system: str, messages: list[dict], max_tokens: int = 2048) -> Any:
+    def create(
+        self, *, system: str, messages: list[dict], max_tokens: int = 2048, temperature: float | None = None
+    ) -> Any:
         # cache_control caches the system prompt (and any messages before the
         # final one) server-side for ~5 min, so repeated calls with the same
         # system prompt - e.g. self_consistency_check.py's 3 samples of the
         # identical prompt - pay full input-token price only on the first
         # call. Live-verified (a short system prompt below the ~1024-token
         # cache minimum just silently doesn't cache - no error either way).
-        return self._client.messages.create(
+        kwargs: dict[str, Any] = dict(
             model=self.model,
             max_tokens=max_tokens,
             system=system,
             messages=messages,
             cache_control={"type": "ephemeral"},
         )
+        # temperature is only set when the caller explicitly wants low-variance
+        # output (e.g. semantic_entropy.py's meaning-clustering judge call) -
+        # every other call keeps the API's own default so this is additive,
+        # not a behavior change to existing callers.
+        if temperature is not None:
+            kwargs["temperature"] = temperature
+        return self._client.messages.create(**kwargs)
 
 
 class OpenAIClient:

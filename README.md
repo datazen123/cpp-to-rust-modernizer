@@ -240,27 +240,65 @@ attempt, no correction pass needed:
 [Wang, Wei, Schuurmans, Le, Chi, Narang, Chowdhery, Zhou, "Self-Consistency
 Improves Chain of Thought Reasoning in Language Models"](https://arxiv.org/abs/2203.11171)
 (ICLR 2023) [11] to `analyze()`: instead of trusting one sample, it calls the
-same prompt 3 times against the identical `legacy/asset_risk.c` source.
+same prompt 5 times against the identical `legacy/asset_risk.c` source.
 
 Unlike this portfolio's other self-consistency checks, `analyze()` doesn't
 assign a severity field to majority-vote - its one categorical judgment is
 CWE identification itself: does Claude name the real planted CWE-121 bug,
 every time?
 
-**Actual measured result** (3 samples):
+**Actual measured result** (5 samples):
 
 | Sample | CWE-121 identified | All CWEs found | Total risks noted |
 |---|---|---|---|
-| 0 | yes | CWE-121, CWE-476, CWE-787 | 6 |
-| 1 | yes | CWE-121 only | 5 |
-| 2 | yes | CWE-120, CWE-121, CWE-476, CWE-788 | 7 |
+| 0 | yes | CWE-120, CWE-121, CWE-190, CWE-369 | 6 |
+| 1 | yes | CWE-120, CWE-121 | 6 |
+| 2 | yes | CWE-120, CWE-121, CWE-20 | 6 |
+| 3 | yes | CWE-120, CWE-121, CWE-170, CWE-190 | 7 |
+| 4 | yes | CWE-120, CWE-121, CWE-131, CWE-190 | 8 |
 
-**CWE-121 identified in 3/3 samples - unanimous.** What varied was
+**CWE-121 identified in 5/5 samples - unanimous.** What varied was
 everything *around* the planted bug: the secondary hygiene observations
-(5 to 7 per sample, different CWE codes each time). That's expected, not
+(6 to 8 per sample, different CWE codes each time). That's expected, not
 a defect - `analyze()` has no fixed list of secondary issues to be
 consistent about, unlike the one planted, labeled bug this repo is
 actually testing detection of.
+
+### Semantic entropy over the program summary
+
+`analyze()` doesn't have a severity field to majority-vote, but it always
+returns a plain-English `summary` of what the program does, regardless of
+which secondary CWEs it happened to note. `self_consistency_check.py`
+runs [Farquhar, Kossen, Kuhn, Gal, "Detecting hallucinations in large
+language models using semantic entropy"](https://www.nature.com/articles/s41586-024-07421-0)
+(*Nature* 630, 625-630, 2024) [24] over the 5 sampled summaries: Claude
+itself clusters them by shared meaning (temperature 0, one clustering
+call for the whole run), and `semantic_entropy.py` computes discrete
+Shannon entropy over the resulting cluster sizes - 0 bits means every
+sample's summary clustered together, higher means Claude's overall
+characterization of the program actually varied. This is the paper's
+"discrete" semantic entropy variant (cluster counts, no token
+log-probabilities) - the right choice here since the Anthropic Messages
+API this repo's `llm_client.py` wraps doesn't expose per-token
+probabilities; see `semantic_entropy.py`'s docstring for the two
+adaptations made from the paper's exact procedure, stated plainly rather
+than assumed.
+
+**Actual measured result, same run: 0.000 bits - all 5 summaries
+clustered together.** Read alongside the table above, this is a
+consistent picture: not only did every sample name CWE-121, every sample
+also described the program itself the same way - the two signals agree
+here, which is worth reporting exactly as measured rather than
+manufacturing a more dramatic split than this run's real result.
+
+**In plain terms:** this repo doesn't have a severity word to check like
+the other 3 do, so the comparable question is "does Claude describe this
+program the same way every time?" Here, yes - all 5 one-paragraph
+summaries said essentially the same thing about what the program does,
+not just word-for-word but in substance. Combined with 5/5 agreement on
+naming the actual planted bug, this run showed no gap between the
+headline finding and the reasoning behind it - the case this technique
+is built to catch (label matches, reasoning doesn't) didn't happen here.
 
 ```bash
 python self_consistency_check.py [--samples N]
@@ -591,8 +629,13 @@ unsafe-keyword check across generated surrounding contexts, not just one
 hand-picked example. `test_fuzz_legacy.py` covers the fuzzer's own
 deterministic generation logic (delimiter exclusion, reproducibility given
 a fixed seed) plus a live run of the Clang Static Analyzer against the
-real buggy source, confirming it actually flags the bug. None need an API
-key or network:
+real buggy source, confirming it actually flags the bug.
+`test_semantic_entropy.py` and `test_semantic_entropy_properties.py`
+cover the discrete semantic entropy math and the meaning-cluster response
+parsing/fallback - the Claude-judged clustering call itself
+(`cluster_by_meaning()`) isn't mocked, matching this repo's existing
+convention of only live-verifying API-calling code, never in pytest.
+None need an API key or network:
 
 ```bash
 pip install -r requirements-dev.txt
@@ -751,6 +794,10 @@ https://www.dmi-ida.org/knowledge-base-detail/AI-Strategy-DOW-Memo -
 see also ExecutiveGov, "Pete Hegseth Introduces War Department Strategy
 to Accelerate AI Adoption."
 https://www.executivegov.com/articles/dow-ai-adoption-strategy-hegseth
+
+[24] Farquhar, Kossen, Kuhn, Gal, "Detecting hallucinations in large
+language models using semantic entropy," *Nature* 630, 625-630, 2024.
+https://www.nature.com/articles/s41586-024-07421-0
 
 [↑ Back to top](#cpp-to-rust-modernizer)
 
