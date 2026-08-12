@@ -564,6 +564,46 @@ Python 3.9 or newer (`python3 --version`), plus `clang` (or `gcc`),
 `rustc`, and `clippy-driver` on `PATH`. `clippy-driver` ships with
 `rustup`'s `clippy` component (`rustup component add clippy`).
 
+If you don't already have a Rust toolchain, here's exactly how to get
+one - independently verified end-to-end on a machine with none of this
+pre-installed (see the due-diligence evidence in this portfolio's
+verification pass):
+
+**macOS (Homebrew):**
+```bash
+brew install rustup
+rustup-init -y   # installs the default toolchain; answer the one prompt, or pass -y to skip it
+rustup component add clippy
+# clang ships with Xcode Command Line Tools - if `clang --version` fails:
+xcode-select --install
+```
+
+**macOS/Linux (no Homebrew, official rustup installer):**
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+rustup component add clippy
+# Linux only, if clang/gcc isn't already present:
+sudo apt install clang   # Debian/Ubuntu - use your distro's package manager equivalent
+```
+
+**Windows:** download and run `rustup-init.exe` from
+[rustup.rs](https://rustup.rs), then `rustup component add clippy` from a
+new terminal. Install clang via
+[LLVM's Windows releases](https://releases.llvm.org/) or use `gcc` via
+[MSYS2](https://www.msys2.org/) instead - either satisfies the
+"`clang` (or `gcc`)" requirement above.
+
+Confirm everything is on `PATH` before proceeding:
+```bash
+python3 --version && clang --version && rustc --version && clippy-driver --version
+```
+
+This portfolio's own CI (`.github/workflows/test.yml`) installs the
+identical toolchain automatically via `dtolnay/rust-toolchain@stable` -
+so if you want to see it work without installing anything locally, a
+fork's Actions tab will run the full suite for you.
+
 [↑ Back to top](#cpp-to-rust-modernizer)
 
 ## Running it
